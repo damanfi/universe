@@ -1,30 +1,36 @@
 {
   "network": "arc-testnet",
   "chainId": 5042002,
-  "comment": "Daman UniverseRegistry on Arc testnet. Addresses populated by `forge script script/DeployUniverse.s.sol` after the Safe + Timelock land on-chain. The DamanCopyBond constructor reads the UniverseRegistry proxy address from this file (or its env mirror) for the asset-eligibility gate.",
+  "comment": "Daman UniverseRegistry on Arc testnet. Shared Safe + TimelockController with the substrate per testnet posture; mainnet uses an independent universe-side Safe. Proxy address populated by `forge script script/DeployUniverse.s.sol`.",
   "safe": {
-    "address": "0x0000000000000000000000000000000000000000",
+    "address": "0x70a34ca4964a16a934432871a593acba5dd63cf1",
     "threshold": 3,
     "signers": [
-      "0x0000000000000000000000000000000000000000",
-      "0x0000000000000000000000000000000000000000",
-      "0x0000000000000000000000000000000000000000",
-      "0x0000000000000000000000000000000000000000",
-      "0x0000000000000000000000000000000000000000"
+      "0x5dF7624bc9845bcEB871652fED33A562E23D8AEd",
+      "0xC4b48093BD777A9b24533Ed307dC3cB5125F77b9",
+      "0x597524cC4921f9B850aCc8410b248b84384dCD19",
+      "0x5150CB37ee5bcF8947D68837948Ed1FE99413854",
+      "0x6767A5F090e0254E983B0325f14ab7f2b54D4902"
     ],
-    "comment": "Independent of the copy-bond Safe per the brief's recommendation: a compromised copy-bond Safe cannot upgrade the universe registry and vice versa."
+    "singleton": "0x41675C099F32341bf84BFc5382aF534df5C7461a",
+    "singletonVersion": "v1.4.1",
+    "proxyFactory": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+    "deployedTx": "0x6d69daae994d17c0996cfe07617cd9cb3267bb6e9ee99e909c74f2d488c9b694"
   },
   "timelock": {
-    "address": "0x0000000000000000000000000000000000000000",
+    "address": "0xa22510860289751C092e67B15b827020CE09DAbf",
     "delaySeconds": 86400,
-    "admin": "SAFE_ADDRESS"
+    "admin": "0x70a34ca4964a16a934432871a593acba5dd63cf1",
+    "proposers": ["0x70a34ca4964a16a934432871a593acba5dd63cf1"],
+    "executors": ["0x70a34ca4964a16a934432871a593acba5dd63cf1"],
+    "deployedTx": "0xa9c45674c0c17b6174eeb50ddc23051e630d38301932c30b3b6ca9284785d807"
   },
   "contracts": {
     "UniverseRegistry": {
       "proxy": "0x0000000000000000000000000000000000000000",
       "implementation": "0x0000000000000000000000000000000000000000",
-      "owner": "TIMELOCK_ADDRESS",
-      "curator": "0x0000000000000000000000000000000000000000",
+      "owner": "0xa22510860289751C092e67B15b827020CE09DAbf",
+      "curator": "0x5dF7624bc9845bcEB871652fED33A562E23D8AEd",
       "sourceTag": "HLAL_2026Q2",
       "deployedAt": "",
       "version": 1
