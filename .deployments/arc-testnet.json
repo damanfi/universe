@@ -1,7 +1,7 @@
 {
   "network": "arc-testnet",
   "chainId": 5042002,
-  "comment": "Daman UniverseRegistry on Arc testnet. Shared Safe + TimelockController with the substrate per testnet posture; mainnet uses an independent universe-side Safe. Proxy address populated by `forge script script/DeployUniverse.s.sol`.",
+  "comment": "Daman UniverseRegistry on Arc testnet. Atomic deploy via script/DeployUniverse.s.sol on 2026-05-24. Seeded via script/SeedHLAL.s.sol with 10 placeholder addresses derived from HLAL ticker symbols. Shared Safe + TimelockController with the substrate per the testnet posture; mainnet uses independent universe-side Safe.",
   "safe": {
     "address": "0x70a34ca4964a16a934432871a593acba5dd63cf1",
     "threshold": 3,
@@ -27,12 +27,16 @@
   },
   "contracts": {
     "UniverseRegistry": {
-      "proxy": "0x0000000000000000000000000000000000000000",
-      "implementation": "0x0000000000000000000000000000000000000000",
+      "proxy": "0xfea80c061a9ed8a25b33e0b6b9f1490bdb10d270",
+      "implementation": "0x7fd82dee25cb0fe867cf1aa541b7cfff76a9b728",
       "owner": "0xa22510860289751C092e67B15b827020CE09DAbf",
       "curator": "0x5dF7624bc9845bcEB871652fED33A562E23D8AEd",
       "sourceTag": "HLAL_2026Q2",
-      "deployedAt": "",
+      "deployedTx": "0x1a871a29a5afeb39870158b08e590aec63ce29cd77326eb6ead6da114ca0125f",
+      "implementationDeployedTx": "0xbe400e35b9ab9236ab0dc5282ad880f26a444de6126650bb2e606c38c675c901",
+      "deployedAt": "2026-05-24T12:45:00Z",
+      "seededAt": "2026-05-24T12:48:00Z",
+      "seededAssetCount": 10,
       "version": 1
     }
   }
