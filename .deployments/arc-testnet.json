@@ -1,0 +1,33 @@
+{
+  "network": "arc-testnet",
+  "chainId": 5042002,
+  "comment": "Daman UniverseRegistry on Arc testnet. Addresses populated by `forge script script/DeployUniverse.s.sol` after the Safe + Timelock land on-chain. The DamanCopyBond constructor reads the UniverseRegistry proxy address from this file (or its env mirror) for the asset-eligibility gate.",
+  "safe": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "threshold": 3,
+    "signers": [
+      "0x0000000000000000000000000000000000000000",
+      "0x0000000000000000000000000000000000000000",
+      "0x0000000000000000000000000000000000000000",
+      "0x0000000000000000000000000000000000000000",
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "comment": "Independent of the copy-bond Safe per the brief's recommendation: a compromised copy-bond Safe cannot upgrade the universe registry and vice versa."
+  },
+  "timelock": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "delaySeconds": 86400,
+    "admin": "SAFE_ADDRESS"
+  },
+  "contracts": {
+    "UniverseRegistry": {
+      "proxy": "0x0000000000000000000000000000000000000000",
+      "implementation": "0x0000000000000000000000000000000000000000",
+      "owner": "TIMELOCK_ADDRESS",
+      "curator": "0x0000000000000000000000000000000000000000",
+      "sourceTag": "HLAL_2026Q2",
+      "deployedAt": "",
+      "version": 1
+    }
+  }
+}

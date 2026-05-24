@@ -3,25 +3,43 @@ pragma solidity ^0.8.24;
 
 import {IUniverseWhitelist} from "damanfi-protocol/IUniverseWhitelist.sol";
 
-/// @title UniverseRegistry. Curator-permissioned reference implementation of `IUniverseWhitelist`.
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+
+/// @title UniverseRegistry. UUPS-upgradeable curator-permissioned implementation of `IUniverseWhitelist`.
 /// @notice The contract is curation-agnostic by construction. The
 ///         flagship Daman deployment seeds this contract from the
 ///         HLAL (Wahed-FTSE-USA) ETF holdings on each rebalance, but
 ///         the contract itself takes no opinion on what the universe
-///         is or how it was curated. Other deployments may seed from
-///         any source.
+///         is or how it was curated.
 ///
-/// @dev Single-curator policy. The curator address is set at deploy
-///      and may be rotated by the current curator. For richer policies
-///      (multisig, oracle-driven, attestation-based), deploy a
-///      different implementation of `IUniverseWhitelist`.
-contract UniverseRegistry is IUniverseWhitelist {
+/// @dev Hardening:
+///      - UUPS-upgradeable. Owner is a TimelockController set via
+///        `initialize`. The owner authorizes upgrades; the
+///        operational curator (which adds/removes assets) is
+///        separate.
+///      - `Pausable`: `addAsset` / `removeAsset` / `setSource` gate
+///        on `whenNotPaused`. `isEligible` and `listAssets` reads
+///        stay open so consumer contracts can continue to read the
+///        whitelist during pause.
+///      - Storage: 30-slot `__gap` at end.
+contract UniverseRegistry is
+    IUniverseWhitelist,
+    Initializable,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    UUPSUpgradeable
+{
     address public curator;
     bytes32 private _sourceTag;
     uint64 private _lastUpdatedAt;
 
     address[] private _assets;
     mapping(address => uint256) private _indexPlusOne;
+
+    uint256[30] private __gap;
 
     event CuratorRotated(address indexed previous, address indexed next);
 
@@ -33,13 +51,36 @@ contract UniverseRegistry is IUniverseWhitelist {
         _;
     }
 
-    constructor(address initialCurator, bytes32 initialSourceTag) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address initialCurator,
+        bytes32 initialSourceTag,
+        address initialOwner
+    ) external initializer {
         if (initialCurator == address(0)) revert ZeroAddress();
+        if (initialOwner == address(0)) revert ZeroAddress();
         if (initialSourceTag == bytes32(0)) revert EmptySource();
+        __Ownable_init(initialOwner);
+        __Pausable_init();
+        __UUPSUpgradeable_init();
         curator = initialCurator;
         _sourceTag = initialSourceTag;
         _lastUpdatedAt = uint64(block.timestamp);
         emit UniverseUpdated(initialSourceTag, _lastUpdatedAt);
+    }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function rotateCurator(address next) external onlyCurator {
@@ -48,14 +89,14 @@ contract UniverseRegistry is IUniverseWhitelist {
         curator = next;
     }
 
-    function setSource(bytes32 nextSourceTag) external onlyCurator {
+    function setSource(bytes32 nextSourceTag) external onlyCurator whenNotPaused {
         if (nextSourceTag == bytes32(0)) revert EmptySource();
         _sourceTag = nextSourceTag;
         _lastUpdatedAt = uint64(block.timestamp);
         emit UniverseUpdated(nextSourceTag, _lastUpdatedAt);
     }
 
-    function addAsset(address asset, bytes32 source) external onlyCurator {
+    function addAsset(address asset, bytes32 source) external onlyCurator whenNotPaused {
         if (asset == address(0)) revert ZeroAddress();
         if (_indexPlusOne[asset] != 0) revert AssetAlreadyListed(asset);
         _assets.push(asset);
@@ -64,7 +105,7 @@ contract UniverseRegistry is IUniverseWhitelist {
         emit AssetAdded(asset, source);
     }
 
-    function removeAsset(address asset, bytes32 reason) external onlyCurator {
+    function removeAsset(address asset, bytes32 reason) external onlyCurator whenNotPaused {
         uint256 idx = _indexPlusOne[asset];
         if (idx == 0) revert AssetNotListed(asset);
         uint256 lastIdx = _assets.length;

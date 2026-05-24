@@ -2,20 +2,26 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
 import {UniverseRegistry} from "../src/UniverseRegistry.sol";
 import {IUniverseWhitelist} from "damanfi-protocol/IUniverseWhitelist.sol";
 
 contract UniverseRegistryTest is Test {
     UniverseRegistry registry;
     address curator = address(0xC1);
-    address other = address(0x0);
     address ticker1 = address(0xA1);
     address ticker2 = address(0xA2);
     address ticker3 = address(0xA3);
     bytes32 constant HLAL_2026Q2 = bytes32("HLAL_2026Q2");
 
     function setUp() public {
-        registry = new UniverseRegistry(curator, HLAL_2026Q2);
+        UniverseRegistry impl = new UniverseRegistry();
+        bytes memory initData = abi.encodeCall(
+            UniverseRegistry.initialize,
+            (curator, HLAL_2026Q2, address(this))
+        );
+        registry = UniverseRegistry(address(new ERC1967Proxy(address(impl), initData)));
     }
 
     function test_initialState() public view {
@@ -95,13 +101,40 @@ contract UniverseRegistryTest is Test {
         registry.setSource(bytes32(0));
     }
 
-    function test_constructor_revertsOnZeroCurator() public {
-        vm.expectRevert(UniverseRegistry.ZeroAddress.selector);
-        new UniverseRegistry(address(0), HLAL_2026Q2);
+    function test_initialize_revertsOnZeroCurator() public {
+        UniverseRegistry impl = new UniverseRegistry();
+        bytes memory bad = abi.encodeCall(
+            UniverseRegistry.initialize,
+            (address(0), HLAL_2026Q2, address(this))
+        );
+        vm.expectRevert();
+        new ERC1967Proxy(address(impl), bad);
     }
 
-    function test_constructor_revertsOnEmptySource() public {
-        vm.expectRevert(UniverseRegistry.EmptySource.selector);
-        new UniverseRegistry(curator, bytes32(0));
+    function test_initialize_revertsOnEmptySource() public {
+        UniverseRegistry impl = new UniverseRegistry();
+        bytes memory bad = abi.encodeCall(
+            UniverseRegistry.initialize,
+            (curator, bytes32(0), address(this))
+        );
+        vm.expectRevert();
+        new ERC1967Proxy(address(impl), bad);
+    }
+
+    function test_pause_blocksWriteSurfaces() public {
+        registry.pause();
+        vm.prank(curator);
+        vm.expectRevert();
+        registry.addAsset(ticker1, bytes32("hlal_seed"));
+    }
+
+    function test_pause_keepsReadsOpen() public {
+        vm.prank(curator);
+        registry.addAsset(ticker1, bytes32("hlal_seed"));
+        registry.pause();
+        // Reads continue to work during pause.
+        assertTrue(registry.isEligible(ticker1));
+        assertEq(registry.listAssets().length, 1);
+        assertEq(registry.sourceTag(), HLAL_2026Q2);
     }
 }

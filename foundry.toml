@@ -11,8 +11,12 @@ optimizer_runs = 1000
 via_ir = true
 remappings = [
     "forge-std/=lib/forge-std/src/",
-    "damanfi-protocol/=lib/damanfi-protocol/src/"
+    "damanfi-protocol/=lib/damanfi-protocol/src/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/"
 ]
+ffi = true
+fs_permissions = [{ access = "read", path = ".deployments" }]
 
 [fmt]
 line_length = 100
